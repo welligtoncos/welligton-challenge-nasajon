@@ -57,12 +57,16 @@
         },
         "serve": {
           "builder": "@angular-devkit/build-angular:dev-server",
+          "options": {
+            "proxyConfig": "proxy.conf.json"
+          },
           "configurations": {
             "production": {
               "buildTarget": "app_front_challenge-nasajon:build:production"
             },
             "development": {
-              "buildTarget": "app_front_challenge-nasajon:build:development"
+              "buildTarget": "app_front_challenge-nasajon:build:development",
+              "proxyConfig": "proxy.conf.json"
             }
           },
           "defaultConfiguration": "development"

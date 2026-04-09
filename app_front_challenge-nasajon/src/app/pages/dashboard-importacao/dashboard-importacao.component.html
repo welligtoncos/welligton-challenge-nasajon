@@ -1,20 +1,23 @@
 <section class="dash" aria-labelledby="dash-title">
   <div class="dash__head">
-    <h2 id="dash-title" class="dash__title">Importação de planilha</h2>
+    <h2 id="dash-title" class="dash__title">Enviar planilha</h2>
     <p class="dash__desc">
-      Envie um arquivo <strong>.csv</strong> ou <strong>.xlsx</strong> com as colunas
-      <code>municipio</code> e <code>populacao</code>. O front apenas lê, valida e monta o payload;
-      regras de negócio e integração com IBGE ficam no backend.
+      Escolha um arquivo <strong>CSV</strong> ou <strong>Excel (.xlsx)</strong> com duas colunas:
+      <code>municipio</code> (nome da cidade) e <code>populacao</code> (número de habitantes).
+      Você vê uma prévia na tela; depois pode processar e baixar o arquivo
+      <strong>resultado.csv</strong> com os dados conferidos.
     </p>
   </div>
 
   <div class="dash__upload">
-    <label class="upload-zone" [class.upload-zone--busy]="loading()">
+    <label class="upload-zone" [class.upload-zone--busy]="loading() || backendLoading()">
       <span class="upload-zone__text">
         @if (loading()) {
-          Lendo arquivo…
+          Carregando arquivo…
+        } @else if (backendLoading()) {
+          Processando… pode levar alguns segundos
         } @else {
-          Clique para escolher ou solte aqui (CSV / XLSX)
+          Clique ou arraste o arquivo para cá (CSV ou Excel)
         }
       </span>
       @if (selectedFileName(); as name) {
@@ -25,14 +28,14 @@
         type="file"
         [accept]="accept"
         (change)="onFileSelected($event)"
-        [disabled]="loading()"
+        [disabled]="loading() || backendLoading()"
       />
     </label>
   </div>
 
   @if (errors().length > 0) {
     <div class="dash__alert dash__alert--error" role="alert">
-      <p class="dash__alert-title">Não foi possível usar este arquivo</p>
+      <p class="dash__alert-title">Não conseguimos usar este arquivo</p>
       <ul class="dash__alert-list">
         @for (err of errors(); track err) {
           <li>{{ err }}</li>
@@ -44,7 +47,7 @@
   @if (previewRows().length > 0 && errors().length === 0) {
     <div class="dash__preview">
       <div class="dash__preview-head">
-        <h3 class="dash__preview-title">Prévia ({{ previewRows().length }} registro(s))</h3>
+        <h3 class="dash__preview-title">Prévia — {{ previewRows().length }} linha(s)</h3>
       </div>
       <div class="table-wrap">
         <table class="data-table">
@@ -69,30 +72,42 @@
         <button
           type="button"
           class="btn-primary"
-          (click)="prepararEnvio()"
-          [disabled]="!podePrepararEnvio()"
+          (click)="processarServidorEBaixar()"
+          [disabled]="!podeProcessarNoServidor()"
         >
-          Preparar envio
+          @if (backendLoading()) {
+            Processando…
+          } @else {
+            Processar e baixar resultado.csv
+          }
         </button>
-        <p class="dash__hint">
-          Isso monta o objeto de envio; a chamada HTTP ao backend pode ser ligada depois ao botão
-          “Enviar”.
-        </p>
       </div>
     </div>
   }
 
-  @if (payload(); as p) {
+  @if (backendError()) {
+    <div class="dash__alert dash__alert--error" role="alert">
+      <p class="dash__alert-title">Não foi possível concluir o processamento</p>
+      <p class="dash__alert-single">{{ backendError() }}</p>
+    </div>
+  }
+
+  @if (backendStats(); as st) {
     <div class="dash__alert dash__alert--success" role="status">
-      <p class="dash__alert-title">Payload preparado</p>
+      <p class="dash__alert-title">Resumo do último arquivo</p>
       <ul class="dash__summary">
-        <li><strong>Arquivo:</strong> {{ p.nomeArquivo }}</li>
-        <li><strong>Registros:</strong> {{ p.municipios.length }}</li>
-        <li><strong>Data (ISO):</strong> {{ p.dataImportacao }}</li>
+        <li><strong>Municípios na planilha:</strong> {{ st.total_municipios }}</li>
+        <li><strong>Encontrados:</strong> {{ st.total_ok }}</li>
+        <li><strong>Não encontrados:</strong> {{ st.total_nao_encontrado }}</li>
+        <li><strong>Com erro na consulta:</strong> {{ st.total_erro_api }}</li>
+        <li><strong>Soma da população (só dos encontrados):</strong> {{ formatInt(st.pop_total_ok) }}</li>
       </ul>
-      <button type="button" class="btn-ghost" disabled title="Integração com o backend em seguida">
-        Enviar ao backend
-      </button>
+      <p class="dash__stats-subtitle">Média de população por região (apenas os encontrados)</p>
+      <ul class="dash__summary">
+        @for (e of mediasRegiaoEntries(st); track e[0]) {
+          <li><strong>{{ e[0] }}:</strong> {{ formatDecimal(e[1]) }}</li>
+        }
+      </ul>
     </div>
   }
 </section>

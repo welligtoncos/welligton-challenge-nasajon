@@ -113,6 +113,19 @@
   border-color: #bbf7d0;
 }
 
+.dash__alert-single {
+  margin: 0;
+  font-size: 0.875rem;
+  line-height: 1.5;
+}
+
+.dash__stats-subtitle {
+  margin: 0.75rem 0 0.35rem;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: #475569;
+}
+
 .dash__alert-title {
   margin: 0 0 0.5rem;
   font-size: 0.9375rem;
@@ -221,22 +234,3 @@
   outline-offset: 2px;
 }
 
-.btn-ghost {
-  padding: 0.5rem 1rem;
-  font: inherit;
-  font-size: 0.875rem;
-  font-weight: 600;
-  color: #64748b;
-  cursor: not-allowed;
-  background: #f1f5f9;
-  border: 1px solid #e2e8f0;
-  border-radius: 0.5rem;
-}
-
-.dash__hint {
-  margin: 0;
-  max-width: 36rem;
-  font-size: 0.8125rem;
-  line-height: 1.45;
-  color: #64748b;
-}

@@ -2,25 +2,41 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { of, throwError } from 'rxjs';
 
 import { DashboardImportacaoComponent } from './dashboard-importacao.component';
+import { IbgeProcessorApiService } from '../../services/ibge-processor-api.service';
 import { UploadPlanilhaService } from '../../services/upload-planilha.service';
 
 describe('DashboardImportacaoComponent', () => {
   let component: DashboardImportacaoComponent;
   let fixture: ComponentFixture<DashboardImportacaoComponent>;
   let planilha: jasmine.SpyObj<UploadPlanilhaService>;
+  let ibgeApi: jasmine.SpyObj<IbgeProcessorApiService>;
 
   beforeEach(async () => {
-    planilha = jasmine.createSpyObj('UploadPlanilhaService', ['processarArquivo', 'buildPayload']);
+    planilha = jasmine.createSpyObj('UploadPlanilhaService', ['processarArquivo']);
     planilha.processarArquivo.and.returnValue(of({ ok: true, rows: [] }));
-    planilha.buildPayload.and.returnValue({
-      nomeArquivo: 't.csv',
-      dataImportacao: '2026-01-01T00:00:00.000Z',
-      municipios: [{ municipio: 'A', populacao: 1 }],
-    });
+
+    ibgeApi = jasmine.createSpyObj('IbgeProcessorApiService', ['processarCsv']);
+    ibgeApi.processarCsv.and.returnValue(
+      of({
+        linhas: [],
+        stats: {
+          total_municipios: 1,
+          total_ok: 1,
+          total_nao_encontrado: 0,
+          total_erro_api: 0,
+          pop_total_ok: 10,
+          medias_por_regiao: { Sudeste: 10 },
+        },
+        resultado_csv: 'municipio_input,x\n',
+      }),
+    );
 
     await TestBed.configureTestingModule({
       imports: [DashboardImportacaoComponent],
-      providers: [{ provide: UploadPlanilhaService, useValue: planilha }],
+      providers: [
+        { provide: UploadPlanilhaService, useValue: planilha },
+        { provide: IbgeProcessorApiService, useValue: ibgeApi },
+      ],
     }).compileComponents();
 
     fixture = TestBed.createComponent(DashboardImportacaoComponent);
@@ -30,17 +46,6 @@ describe('DashboardImportacaoComponent', () => {
 
   it('should create', () => {
     expect(component).toBeTruthy();
-  });
-
-  it('prepararEnvio should build payload when rows exist', () => {
-    component.selectedFileName.set('dados.csv');
-    component.previewRows.set([{ municipio: 'X', populacao: 10 }]);
-    component.errors.set([]);
-
-    component.prepararEnvio();
-
-    expect(planilha.buildPayload).toHaveBeenCalledWith('dados.csv', [{ municipio: 'X', populacao: 10 }]);
-    expect(component.payload()?.nomeArquivo).toBe('t.csv');
   });
 
   it('should surface errors when processarArquivo fails', () => {

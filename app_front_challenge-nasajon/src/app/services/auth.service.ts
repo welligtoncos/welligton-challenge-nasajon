@@ -86,13 +86,13 @@ export class AuthService {
     }
 
     if (err.status === 0) {
-      return 'Não foi possível conectar. Verifique sua rede e tente novamente.';
+      return 'Sem conexão. Confira a internet e tente de novo.';
     }
 
     if (err.status === 400 || err.status === 401) {
-      return 'E-mail ou senha inválidos.';
+      return 'E-mail ou senha incorretos.';
     }
 
-    return err.statusText || 'Falha na autenticação. Tente novamente.';
+    return err.statusText || 'Não foi possível entrar. Tente de novo em instantes.';
   }
 }

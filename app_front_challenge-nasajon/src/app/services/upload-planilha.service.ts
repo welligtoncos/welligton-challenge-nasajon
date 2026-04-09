@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { Observable, from } from 'rxjs';
 import * as XLSX from 'xlsx';
-import type { ImportacaoPlanilhaPayload, MunicipioImportado } from '../models/municipio-importado.model';
+import type { MunicipioImportado } from '../models/municipio-importado.model';
 
 const REQUIRED_CANONICAL = ['municipio', 'populacao'] as const;
 
@@ -18,27 +18,12 @@ export class UploadPlanilhaService {
     return from(this.readAndValidate(file));
   }
 
-  /**
-   * Monta o payload para POST futuro ao backend.
-   */
-  buildPayload(
-    nomeArquivo: string,
-    municipios: MunicipioImportado[],
-    dataImportacao: Date = new Date(),
-  ): ImportacaoPlanilhaPayload {
-    return {
-      nomeArquivo,
-      dataImportacao: dataImportacao.toISOString(),
-      municipios,
-    };
-  }
-
   private async readAndValidate(file: File): Promise<ResultadoLeituraPlanilha> {
     const ext = this.resolveExtension(file.name);
     if (!ext) {
       return {
         ok: false,
-        errors: ['Formato não suportado. Envie um arquivo .csv ou .xlsx.'],
+        errors: ['Use um arquivo CSV ou Excel (.xlsx). Outros formatos não são aceitos.'],
       };
     }
 
@@ -62,13 +47,13 @@ export class UploadPlanilhaService {
     } catch {
       return {
         ok: false,
-        errors: ['Não foi possível ler o arquivo. Verifique se não está corrompido.'],
+        errors: ['Não conseguimos abrir este arquivo. Ele pode estar danificado ou protegido.'],
       };
     }
 
     const sheetName = workbook.SheetNames[0];
     if (!sheetName) {
-      return { ok: false, errors: ['A planilha não contém abas.'] };
+      return { ok: false, errors: ['O arquivo parece vazio ou não tem planilha para ler.'] };
     }
 
     const sheet = workbook.Sheets[sheetName];
@@ -80,13 +65,13 @@ export class UploadPlanilhaService {
     if (rows.length === 0) {
       return {
         ok: false,
-        errors: ['Nenhuma linha de dados encontrada (após o cabeçalho).'],
+        errors: ['Não há linhas de dados depois do cabeçalho. Confira se a planilha tem conteúdo.'],
       };
     }
 
     const headerKeys = Object.keys(rows[0] ?? {});
     if (headerKeys.length === 0) {
-      return { ok: false, errors: ['Cabeçalho da planilha não foi identificado.'] };
+      return { ok: false, errors: ['Não encontramos o cabeçalho da planilha (primeira linha com nomes das colunas).'] };
     }
 
     const keyMunicipio = this.findColumnKey(headerKeys, 'municipio');
@@ -103,8 +88,8 @@ export class UploadPlanilhaService {
       return {
         ok: false,
         errors: [
-          `Colunas obrigatórias ausentes ou com nome incorreto: ${missing.join(', ')}. ` +
-            'Use os cabeçalhos municipio e populacao (maiúsculas/minúsculas ignoradas).',
+          `Faltam colunas ou o nome está diferente: na primeira linha use as colunas "municipio" e "populacao" ` +
+            `(maiúsculas ou minúsculas não importam). Faltando: ${missing.join(', ')}.`,
         ],
       };
     }
@@ -121,11 +106,11 @@ export class UploadPlanilhaService {
         return;
       }
       if (!municipio) {
-        errors.push(`Linha ${line}: município vazio.`);
+        errors.push(`Linha ${line}: falta o nome do município.`);
         return;
       }
       if (populacao === null) {
-        errors.push(`Linha ${line}: população inválida (${String(row[keyPopulacao!])}).`);
+        errors.push(`Linha ${line}: população inválida ou em branco (valor: "${String(row[keyPopulacao!])}").`);
         return;
       }
 
@@ -135,14 +120,14 @@ export class UploadPlanilhaService {
     if (data.length === 0) {
       return {
         ok: false,
-        errors: ['Nenhum registro válido após a validação. Verifique município e população.'],
+        errors: ['Nenhuma linha válida. Confira se cada linha tem município e população corretos.'],
       };
     }
 
     if (errors.length > 0) {
       const max = 15;
       const shown = errors.slice(0, max);
-      const extra = errors.length > max ? [`… e mais ${errors.length - max} problema(s).`] : [];
+      const extra = errors.length > max ? [`… e mais ${errors.length - max} aviso(s) nas outras linhas.`] : [];
       return { ok: false, errors: [...shown, ...extra] };
     }
 
