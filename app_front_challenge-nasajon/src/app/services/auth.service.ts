@@ -41,6 +41,11 @@ export class AuthService {
     return localStorage.getItem(TOKEN_STORAGE_KEY);
   }
 
+  isAuthenticated(): boolean {
+    const token = this.getToken();
+    return typeof token === 'string' && token.length > 0;
+  }
+
   /** Remove o token salvo (logout). */
   removeToken(): void {
     localStorage.removeItem(TOKEN_STORAGE_KEY);

@@ -1,5 +1,6 @@
 import { Component, inject, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+import { Router } from '@angular/router';
 import { AuthService } from '../../services/auth.service';
 
 @Component({
@@ -11,6 +12,7 @@ import { AuthService } from '../../services/auth.service';
 export class LoginComponent {
   private fb = inject(FormBuilder);
   private auth = inject(AuthService);
+  private router = inject(Router);
 
   readonly loading = signal(false);
   readonly errorMessage = signal<string | null>(null);
@@ -37,6 +39,7 @@ export class LoginComponent {
         console.log('[login] token_type', res.token_type);
         console.log('[login] expires_in', res.expires_in);
         console.log('[login] user', res.user);
+        void this.router.navigateByUrl('/portal');
       },
       error: (err: Error) => {
         this.loading.set(false);
