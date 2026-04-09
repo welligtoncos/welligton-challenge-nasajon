@@ -92,7 +92,11 @@ SPECTACULAR_SETTINGS = {
     "DESCRIPTION": (
         "API para envio de CSV com colunas **municipio** e **populacao**, "
         "enriquecimento via API pública do IBGE (matching, UF, região, código) "
-        "e retorno de **resultado_csv** + estatísticas."
+        "e retorno de **resultado_csv** + estatísticas.\n\n"
+        "---\n\n"
+        "**Dica para desenvolvedores:** use **Try it out** em cada operação; "
+        "em **processar-csv** escolha um arquivo `.csv` no campo **arquivo** e execute. "
+        "A primeira chamada pode demorar enquanto o servidor baixa a lista de municípios do IBGE."
     ),
     "VERSION": "1.0.0",
     "SERVE_INCLUDE_SCHEMA": False,
@@ -102,6 +106,18 @@ SPECTACULAR_SETTINGS = {
         {"name": "Estatísticas", "description": "Cálculo de totais e médias sobre linhas já processadas."},
         {"name": "Metadados", "description": "Índice e documentação."},
     ],
+    # Swagger UI: filtros, lista de endpoints aberta e “Try it out” explícito
+    "SWAGGER_UI_SETTINGS": {
+        "deepLinking": True,
+        "displayOperationId": False,
+        "displayRequestDuration": True,
+        "docExpansion": "list",
+        "filter": True,
+        "showExtensions": True,
+        "tryItOutEnabled": True,
+        "syntaxHighlight.activate": True,
+        "syntaxHighlight.theme": "monokai",
+    },
 }
 
 IBGE_MUNICIPIOS_URL = (
