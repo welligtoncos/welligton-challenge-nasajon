@@ -108,6 +108,43 @@
           <li><strong>{{ e[0] }}:</strong> {{ formatDecimal(e[1]) }}</li>
         }
       </ul>
+
+      <div class="dash__grading-block">
+        <button
+          type="button"
+          class="btn-secondary"
+          (click)="enviarParaCorrecao()"
+          [disabled]="!podeEnviarCorrecao()"
+        >
+          @if (gradingLoading()) {
+            Enviando para correção…
+          } @else {
+            Enviar resultado para correção
+          }
+        </button>
+        <p class="dash__grading-hint">
+          Só depois de processar a planilha: envia as estatísticas e mostra sua nota abaixo.
+        </p>
+      </div>
+    </div>
+  }
+
+  @if (gradingError()) {
+    <div class="dash__alert dash__alert--error" role="alert">
+      <p class="dash__alert-title">Correção</p>
+      <p class="dash__alert-single">{{ gradingError() }}</p>
+    </div>
+  }
+
+  @if (gradingResult(); as g) {
+    <div class="dash__alert dash__alert--grading" role="status" aria-live="polite">
+      <p class="dash__alert-title">Sua nota</p>
+      <p class="dash__score" aria-label="Nota">{{ formatScore(g.score) }}</p>
+      <p class="dash__score-caption">Pontuação do desafio</p>
+      @if (g.email) {
+        <p class="dash__grading-meta">{{ g.email }}</p>
+      }
+      <p class="dash__feedback">{{ g.feedback }}</p>
     </div>
   }
 </section>

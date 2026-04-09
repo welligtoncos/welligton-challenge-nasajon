@@ -1,8 +1,12 @@
 import { HttpErrorResponse } from '@angular/common/http';
 import { Component, inject, signal } from '@angular/core';
+import { IBGE_SUBMIT_FUNCTION_URL } from '../../config/supabase.config';
+import type { IbgeGradingResponse } from '../../models/ibge-grading-response.model';
 import type { MunicipioImportado } from '../../models/municipio-importado.model';
 import type { ProcessarCsvStats } from '../../models/processar-csv-response.model';
+import { AuthService } from '../../services/auth.service';
 import { IbgeProcessorApiService } from '../../services/ibge-processor-api.service';
+import { IbgeSubmitGradingService } from '../../services/ibge-submit-grading.service';
 import { UploadPlanilhaService } from '../../services/upload-planilha.service';
 import { downloadTextAsFile } from '../../utils/download-text-file';
 
@@ -14,6 +18,8 @@ import { downloadTextAsFile } from '../../utils/download-text-file';
 export class DashboardImportacaoComponent {
   private readonly planilha = inject(UploadPlanilhaService);
   private readonly ibgeApi = inject(IbgeProcessorApiService);
+  private readonly gradingSubmit = inject(IbgeSubmitGradingService);
+  private readonly auth = inject(AuthService);
 
   readonly loading = signal(false);
   readonly errors = signal<string[]>([]);
@@ -25,6 +31,10 @@ export class DashboardImportacaoComponent {
   readonly backendLoading = signal(false);
   readonly backendError = signal<string | null>(null);
   readonly backendStats = signal<ProcessarCsvStats | null>(null);
+
+  readonly gradingLoading = signal(false);
+  readonly gradingResult = signal<IbgeGradingResponse | null>(null);
+  readonly gradingError = signal<string | null>(null);
 
   readonly accept = '.csv,.xlsx,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
 
@@ -39,6 +49,7 @@ export class DashboardImportacaoComponent {
     this.selectedFile.set(null);
     this.backendError.set(null);
     this.backendStats.set(null);
+    this.resetGradingUi();
 
     if (!file) {
       return;
@@ -77,6 +88,7 @@ export class DashboardImportacaoComponent {
 
     this.backendLoading.set(true);
     this.backendError.set(null);
+    this.resetGradingUi();
 
     const upload = file.name.toLowerCase().endsWith('.csv')
       ? file
@@ -93,6 +105,58 @@ export class DashboardImportacaoComponent {
         this.backendError.set(this.mapHttpError(err));
       },
     });
+  }
+
+  /**
+   * Envia o JSON `{ stats }` para a Edge Function de correção (somente após clique do usuário).
+   */
+  enviarParaCorrecao(): void {
+    const stats = this.backendStats();
+    if (!stats || this.gradingLoading()) {
+      return;
+    }
+
+    if (!IBGE_SUBMIT_FUNCTION_URL.trim()) {
+      this.gradingError.set('O endereço da correção ainda não foi configurado.');
+      return;
+    }
+    if (!this.auth.getToken()) {
+      this.gradingError.set('Entre na sua conta para enviar o resultado à correção.');
+      return;
+    }
+
+    this.gradingLoading.set(true);
+    this.gradingError.set(null);
+
+    this.gradingSubmit.submitStats(stats).subscribe({
+      next: (grading) => {
+        this.gradingLoading.set(false);
+        this.gradingResult.set(grading);
+        console.log('[correção] Nota (score):', grading.score);
+        if (grading.feedback) {
+          console.log('[correção] Feedback:', grading.feedback);
+        }
+      },
+      error: (err: unknown) => {
+        this.gradingLoading.set(false);
+        this.gradingResult.set(null);
+        this.gradingError.set(this.mapHttpError(err));
+        console.warn('[correção] Falha ao enviar:', err);
+      },
+    });
+  }
+
+  podeEnviarCorrecao(): boolean {
+    return (
+      this.backendStats() !== null &&
+      !this.loading() &&
+      !this.backendLoading() &&
+      !this.gradingLoading()
+    );
+  }
+
+  formatScore(value: number): string {
+    return value.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   }
 
   podeProcessarNoServidor(): boolean {
@@ -144,6 +208,12 @@ export class DashboardImportacaoComponent {
       return `"${s.replace(/"/g, '""')}"`;
     }
     return s;
+  }
+
+  private resetGradingUi(): void {
+    this.gradingLoading.set(false);
+    this.gradingResult.set(null);
+    this.gradingError.set(null);
   }
 
   private criarArquivoCsvDasLinhas(rows: MunicipioImportado[]): File {

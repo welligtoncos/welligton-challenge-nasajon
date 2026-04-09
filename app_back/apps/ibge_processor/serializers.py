@@ -34,7 +34,10 @@ class StatsSerializer(serializers.Serializer):
 
     total_municipios = serializers.IntegerField()
     total_ok = serializers.IntegerField()
-    total_nao_encontrado = serializers.IntegerField()
+    total_nao_encontrado = serializers.IntegerField(
+        help_text="Contagem de linhas com status NAO_ENCONTRADO ou AMBIGUO. "
+        "Soma com total_ok e total_erro_api igual a total_municipios.",
+    )
     total_erro_api = serializers.IntegerField()
     pop_total_ok = serializers.IntegerField()
     medias_por_regiao = serializers.DictField(
