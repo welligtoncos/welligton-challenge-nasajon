@@ -6,6 +6,10 @@
     </header>
 
     <form class="login-form" [formGroup]="form" (ngSubmit)="onSubmit()" novalidate>
+      @if (errorMessage()) {
+        <div class="login-form__banner" role="alert">{{ errorMessage() }}</div>
+      }
+
       <div class="field">
         <label class="field__label" for="login-email">E-mail</label>
         <input
@@ -56,7 +60,9 @@
         }
       </div>
 
-      <button class="btn-primary" type="submit">Entrar</button>
+      <button class="btn-primary" type="submit" [disabled]="loading()">
+        {{ loading() ? 'Entrando…' : 'Entrar' }}
+      </button>
     </form>
 
     <p class="login-card__footer">

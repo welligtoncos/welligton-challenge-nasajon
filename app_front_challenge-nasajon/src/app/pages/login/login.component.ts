@@ -1,5 +1,6 @@
-import { Component, inject } from '@angular/core';
+import { Component, inject, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+import { AuthService } from '../../services/auth.service';
 
 @Component({
   selector: 'app-login',
@@ -9,6 +10,10 @@ import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 })
 export class LoginComponent {
   private fb = inject(FormBuilder);
+  private auth = inject(AuthService);
+
+  readonly loading = signal(false);
+  readonly errorMessage = signal<string | null>(null);
 
   readonly form = this.fb.nonNullable.group({
     email: ['', [Validators.required, Validators.email]],
@@ -20,7 +25,24 @@ export class LoginComponent {
       this.form.markAllAsTouched();
       return;
     }
-    // Integração com autenticação virá aqui
+
+    const { email, password } = this.form.getRawValue();
+    this.loading.set(true);
+    this.errorMessage.set(null);
+
+    this.auth.login(email, password).subscribe({
+      next: (res) => {
+        this.loading.set(false);
+        console.log('[login] access_token', res.access_token);
+        console.log('[login] token_type', res.token_type);
+        console.log('[login] expires_in', res.expires_in);
+        console.log('[login] user', res.user);
+      },
+      error: (err: Error) => {
+        this.loading.set(false);
+        this.errorMessage.set(err.message);
+      },
+    });
   }
 
   onForgotPassword(event: Event): void {

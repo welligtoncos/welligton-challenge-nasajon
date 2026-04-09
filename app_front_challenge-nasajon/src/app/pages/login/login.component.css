@@ -54,6 +54,16 @@
   gap: 1.25rem;
 }
 
+.login-form__banner {
+  padding: 0.75rem 0.875rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #991b1b;
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  border-radius: 0.625rem;
+}
+
 .field {
   display: flex;
   flex-direction: column;
@@ -172,6 +182,13 @@
 
 .btn-primary:active {
   transform: translateY(1px);
+}
+
+.btn-primary:disabled {
+  cursor: not-allowed;
+  opacity: 0.65;
+  filter: none;
+  box-shadow: none;
 }
 
 .btn-primary:focus-visible {
