@@ -73,9 +73,6 @@
   outline-offset: 2px;
 }
 
-.portal-content__lead {
-  margin: 0;
-  font-size: 1rem;
-  line-height: 1.6;
-  color: #334155;
+.portal-content {
+  padding-top: 0.25rem;
 }

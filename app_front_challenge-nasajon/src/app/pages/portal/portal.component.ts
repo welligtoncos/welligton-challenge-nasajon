@@ -1,9 +1,11 @@
 import { Component, inject } from '@angular/core';
 import { Router } from '@angular/router';
 import { AuthService } from '../../services/auth.service';
+import { DashboardImportacaoComponent } from '../dashboard-importacao/dashboard-importacao.component';
 
 @Component({
   selector: 'app-portal',
+  imports: [DashboardImportacaoComponent],
   templateUrl: './portal.component.html',
   styleUrl: './portal.component.css',
 })

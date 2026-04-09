@@ -1,0 +1,98 @@
+<section class="dash" aria-labelledby="dash-title">
+  <div class="dash__head">
+    <h2 id="dash-title" class="dash__title">Importação de planilha</h2>
+    <p class="dash__desc">
+      Envie um arquivo <strong>.csv</strong> ou <strong>.xlsx</strong> com as colunas
+      <code>municipio</code> e <code>populacao</code>. O front apenas lê, valida e monta o payload;
+      regras de negócio e integração com IBGE ficam no backend.
+    </p>
+  </div>
+
+  <div class="dash__upload">
+    <label class="upload-zone" [class.upload-zone--busy]="loading()">
+      <span class="upload-zone__text">
+        @if (loading()) {
+          Lendo arquivo…
+        } @else {
+          Clique para escolher ou solte aqui (CSV / XLSX)
+        }
+      </span>
+      @if (selectedFileName(); as name) {
+        <span class="upload-zone__file">{{ name }}</span>
+      }
+      <input
+        class="upload-zone__input"
+        type="file"
+        [accept]="accept"
+        (change)="onFileSelected($event)"
+        [disabled]="loading()"
+      />
+    </label>
+  </div>
+
+  @if (errors().length > 0) {
+    <div class="dash__alert dash__alert--error" role="alert">
+      <p class="dash__alert-title">Não foi possível usar este arquivo</p>
+      <ul class="dash__alert-list">
+        @for (err of errors(); track err) {
+          <li>{{ err }}</li>
+        }
+      </ul>
+    </div>
+  }
+
+  @if (previewRows().length > 0 && errors().length === 0) {
+    <div class="dash__preview">
+      <div class="dash__preview-head">
+        <h3 class="dash__preview-title">Prévia ({{ previewRows().length }} registro(s))</h3>
+      </div>
+      <div class="table-wrap">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th scope="col">Município</th>
+              <th scope="col" class="num">População</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (row of previewRows(); track $index) {
+              <tr>
+                <td>{{ row.municipio }}</td>
+                <td class="num">{{ formatPopulacao(row.populacao) }}</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+
+      <div class="dash__actions">
+        <button
+          type="button"
+          class="btn-primary"
+          (click)="prepararEnvio()"
+          [disabled]="!podePrepararEnvio()"
+        >
+          Preparar envio
+        </button>
+        <p class="dash__hint">
+          Isso monta o objeto de envio; a chamada HTTP ao backend pode ser ligada depois ao botão
+          “Enviar”.
+        </p>
+      </div>
+    </div>
+  }
+
+  @if (payload(); as p) {
+    <div class="dash__alert dash__alert--success" role="status">
+      <p class="dash__alert-title">Payload preparado</p>
+      <ul class="dash__summary">
+        <li><strong>Arquivo:</strong> {{ p.nomeArquivo }}</li>
+        <li><strong>Registros:</strong> {{ p.municipios.length }}</li>
+        <li><strong>Data (ISO):</strong> {{ p.dataImportacao }}</li>
+      </ul>
+      <button type="button" class="btn-ghost" disabled title="Integração com o backend em seguida">
+        Enviar ao backend
+      </button>
+    </div>
+  }
+</section>
